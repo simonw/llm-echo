@@ -1,0 +1,28 @@
+[project]
+name = "llm-echo"
+version = "0.1"
+description = "Debug plugin for LLM"
+readme = "README.md"
+authors = [{name = "Simon Willison"}]
+license = "Apache-2.0"
+classifiers = []
+requires-python = ">=3.9"
+dependencies = [
+    "llm"
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+Homepage = "https://github.com/simonw/llm-echo"
+Changelog = "https://github.com/simonw/llm-echo/releases"
+Issues = "https://github.com/simonw/llm-echo/issues"
+CI = "https://github.com/simonw/llm-echo/actions"
+
+[project.entry-points.llm]
+echo = "llm_echo"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-asyncio"]
