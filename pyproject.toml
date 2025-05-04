@@ -1,6 +1,6 @@
 [project]
 name = "llm-echo"
-version = "0.1"
+version = "0.2"
 description = "Debug plugin for LLM"
 readme = "README.md"
 authors = [{name = "Simon Willison"}]
