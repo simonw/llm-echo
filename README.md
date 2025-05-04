@@ -32,13 +32,13 @@ Output:
 ```
 You can also add one example option like this:
 ```bash
-llm -m echo prompt -s 'system prompt' -o example_bool 1
+llm -m echo prompt -o example_bool 1
 ```
 Output:
 ```json
 {
   "prompt": "prompt",
-  "system": "system prompt",
+  "system": "",
   "attachments": [],
   "stream": true,
   "previous": [],
