@@ -30,6 +30,23 @@ Output:
   "previous": []
 }
 ```
+You can also add one example option like this:
+```bash
+llm -m echo prompt -s 'system prompt' -o example_bool 1
+```
+Output:
+```json
+{
+  "prompt": "prompt",
+  "system": "system prompt",
+  "attachments": [],
+  "stream": true,
+  "previous": [],
+  "options": {
+    "example_bool": true
+  }
+}
+```
 
 ## Development
 

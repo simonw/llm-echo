@@ -1,6 +1,8 @@
 import llm
 import json
+from typing import Optional
 from typing import AsyncGenerator
+from pydantic import Field
 
 
 @llm.hookimpl
@@ -13,8 +15,14 @@ class _Shared:
     can_stream = True
     attachment_types = ("image/png", "image/jpeg", "image/gif")
 
+    class Options(llm.Options):
+        example_bool: Optional[bool] = Field(
+            description="Example boolean option",
+            default=None,
+        )
+
     def shared(self, prompt, stream, response, conversation):
-        return {
+        info = {
             "prompt": prompt.prompt,
             "system": prompt.system,
             "attachments": [
@@ -33,6 +41,11 @@ class _Shared:
                 else []
             ),
         }
+        if prompt.options.example_bool is not None:
+            info["options"] = {
+                "example_bool": prompt.options.example_bool,
+            }
+        return info
 
 
 class Echo(_Shared, llm.Model):

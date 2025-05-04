@@ -15,6 +15,19 @@ def test_prompt():
     }
 
 
+def test_prompt_with_option():
+    model = llm.get_model("echo")
+    response = model.prompt("prompt", system="system", example_bool=True)
+    assert json.loads(str(response)) == {
+        "prompt": "prompt",
+        "system": "system",
+        "attachments": [],
+        "stream": True,
+        "previous": [],
+        "options": {"example_bool": True},
+    }
+
+
 def test_conversation():
     model = llm.get_model("echo")
     conversation = model.conversation()
