@@ -55,10 +55,12 @@ You can use `llm-echo` to test tool calling without needing to run prompts throu
 ```json
 {
   "prompt": "This will be treated as the prompt",
-  "tool_calls": {
-    "name": "example",
-    "arguments": {
-      "input": "Hello, world!"
+  "tool_calls": [
+    {
+      "name": "example",
+      "arguments": {
+        "input": "Hello, world!"
+      }
     }
   ]
 }
@@ -102,16 +104,16 @@ response_info = json.loads(responses[-1].text())
 And run assertions against the `"tool_results"` key, which should look something like this:
 ```python
 {
-    "prompt": "",
-    "system": "",
-    "...": "...",
-    "tool_results": [
-        {
-            "name": "example",
-            "output": "Example output for test",
-            "tool_call_id": null
-        }
-    ]
+  "prompt": "",
+  "system": "",
+  "...": "...",
+  "tool_results": [
+    {
+      "name": "example",
+      "output": "Example output for test",
+      "tool_call_id": null
+    }
+  ]
 }
 ```
 Take a look at the [test suite for llm-tools-simpleeval](https://github.com/simonw/llm-tools-simpleeval/blob/main/tests/test_tools_simpleeval.py) for an example of how to write tests against tools.
