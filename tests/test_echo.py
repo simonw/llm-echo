@@ -55,3 +55,29 @@ async def test_async_prompt():
         "stream": True,
         "previous": [],
     }
+
+
+def test_prompt_with_tool_calls():
+    def example(input: str) -> str:
+        return f"Example output for {input}"
+
+    model = llm.get_model("echo")
+    response = model.prompt(
+        json.dumps(
+            {
+                "tool_calls": [
+                    {
+                        "name": "example",
+                        "arguments": {"input": "test"},
+                    }
+                ],
+                "prompt": "prompt",
+            }
+        ),
+        system="system",
+        tools=[example],
+    )
+    tool_calls = response.tool_calls()
+    assert tool_calls == [
+        llm.ToolCall(name="example", arguments={"input": "test"}, tool_call_id=None)
+    ]

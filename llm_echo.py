@@ -13,6 +13,7 @@ def register_models(register):
 class _Shared:
     model_id = "echo"
     can_stream = True
+    supports_tools = True
     attachment_types = ("image/png", "image/jpeg", "image/gif")
 
     class Options(llm.Options):
@@ -22,8 +23,26 @@ class _Shared:
         )
 
     def shared(self, prompt, stream, response, conversation):
+        prompt_text = prompt.prompt
+        if prompt_text.strip()[0] == "{":
+            try:
+                prompt_dict = json.loads(prompt_text)
+                prompt_text = prompt_dict.get("prompt", "")
+                tool_calls = prompt_dict.get("tool_calls", [])
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        response.add_tool_call(
+                            llm.ToolCall(
+                                name=tool_call["name"],
+                                arguments=tool_call["arguments"],
+                            )
+                        )
+
+            except json.JSONDecodeError:
+                pass
+
         info = {
-            "prompt": prompt.prompt,
+            "prompt": prompt_text,
             "system": prompt.system,
             "attachments": [
                 {"type": a.type, "path": a.path, "url": a.url, "id": a.id()}
