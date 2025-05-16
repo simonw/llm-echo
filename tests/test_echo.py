@@ -1,5 +1,6 @@
 import json
 import llm
+import llm.models
 import pytest
 
 
@@ -62,7 +63,7 @@ def test_prompt_with_tool_calls():
         return f"Example output for {input}"
 
     model = llm.get_model("echo")
-    response = model.prompt(
+    chain_response = model.chain(
         json.dumps(
             {
                 "tool_calls": [
@@ -77,7 +78,13 @@ def test_prompt_with_tool_calls():
         system="system",
         tools=[example],
     )
-    tool_calls = response.tool_calls()
+    responses = list(chain_response.responses())
+    tool_calls = responses[0].tool_calls()
     assert tool_calls == [
         llm.ToolCall(name="example", arguments={"input": "test"}, tool_call_id=None)
+    ]
+    assert responses[1].prompt.tool_results == [
+        llm.models.ToolResult(
+            name="example", output="Example output for test", tool_call_id=None
+        )
     ]

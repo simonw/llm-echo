@@ -24,7 +24,7 @@ class _Shared:
 
     def shared(self, prompt, stream, response, conversation):
         prompt_text = prompt.prompt
-        if prompt_text.strip()[0] == "{":
+        if prompt_text.strip() and prompt_text.strip()[0] == "{":
             try:
                 prompt_dict = json.loads(prompt_text)
                 prompt_text = prompt_dict.get("prompt", "")
