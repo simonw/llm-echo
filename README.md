@@ -63,9 +63,58 @@ You can use `llm-echo` to test tool calling without needing to run prompts throu
   ]
 }
 ```
-This will be converted into [tool call requests](https://llm.datasette.io/en/latest/python-api.html#tools) in the response.
+You can assemble a test that looks like this:
+```python
+def example(input: str) -> str:
+    return f"Example output for {input}"
 
-Take a look at the [test suite for llm-tools-simpleeval](https://github.com/simonw/llm-tools-simpleeval/blob/main/tests/test_tools_simpleeval.py) for an example of how to use this.
+model = llm.get_model("echo")
+chain_response = model.chain(
+    json.dumps(
+        {
+            "tool_calls": [
+                {
+                    "name": "example",
+                    "arguments": {"input": "test"},
+                }
+            ],
+            "prompt": "prompt",
+        }
+    ),
+    system="system",
+    tools=[example],
+)
+responses = list(chain_response.responses())
+tool_calls = responses[0].tool_calls()
+assert tool_calls == [
+    llm.ToolCall(name="example", arguments={"input": "test"}, tool_call_id=None)
+]
+assert responses[1].prompt.tool_results == [
+    llm.models.ToolResult(
+        name="example", output="Example output for test", tool_call_id=None
+    )
+]
+```
+Or you can read the JSON from the last response in the chain:
+```python
+response_info = json.loads(responses[-1].text())
+```
+And run assertions against the `"tool_results"` key, which should look something like this:
+```python
+{
+    "prompt": "",
+    "system": "",
+    "...": "...",
+    "tool_results": [
+        {
+            "name": "example",
+            "output": "Example output for test",
+            "tool_call_id": null
+        }
+    ]
+}
+```
+Take a look at the [test suite for llm-tools-simpleeval](https://github.com/simonw/llm-tools-simpleeval/blob/main/tests/test_tools_simpleeval.py) for an example of how to write tests against tools.
 
 ## Development
 

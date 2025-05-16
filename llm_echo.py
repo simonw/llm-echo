@@ -64,6 +64,15 @@ class _Shared:
             info["options"] = {
                 "example_bool": prompt.options.example_bool,
             }
+        if prompt.tool_results:
+            info["tool_results"] = [
+                {
+                    "name": r.name,
+                    "output": r.output,
+                    "tool_call_id": r.tool_call_id,
+                }
+                for r in prompt.tool_results
+            ]
         return info
 
 

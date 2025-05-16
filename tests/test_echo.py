@@ -88,3 +88,21 @@ def test_prompt_with_tool_calls():
             name="example", output="Example output for test", tool_call_id=None
         )
     ]
+    assert json.loads(responses[1].text()) == {
+        "prompt": "",
+        "system": "",
+        "attachments": [],
+        "stream": True,
+        "previous": [
+            {
+                "prompt": '{"tool_calls": [{"name": "example", "arguments": {"input": "test"}}], "prompt": "prompt"}'
+            }
+        ],
+        "tool_results": [
+            {
+                "name": "example",
+                "output": "Example output for test",
+                "tool_call_id": None,
+            }
+        ],
+    }
