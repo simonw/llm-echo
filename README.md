@@ -118,6 +118,21 @@ And run assertions against the `"tool_results"` key, which should look something
 ```
 Take a look at the [test suite for llm-tools-simpleeval](https://github.com/simonw/llm-tools-simpleeval/blob/main/tests/test_tools_simpleeval.py) for an example of how to write tests against tools.
 
+## Raw responses
+
+Sometimes it can be useful to output an exact string, for example if you are testing the `--extract` option in LLM.
+
+If your prompt is JSON with a `"raw"` key that string is the only thing that will be returned. For example:
+```json
+{
+  "raw": "This is the raw response"
+}
+```
+Will return:
+```
+This is the raw response
+```
+
 ## Development
 
 To set up this plugin locally, first checkout the code. Then create a new virtual environment:

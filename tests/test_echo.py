@@ -106,3 +106,18 @@ def test_prompt_with_tool_calls():
             }
         ],
     }
+
+
+def test_raw():
+    model = llm.get_model("echo")
+    response = model.prompt(
+        json.dumps(
+            {
+                "raw": "this is the raw text",
+                "misc": "Other stuff",
+            }
+        ),
+        system="system",
+    )
+    output = response.text()
+    assert output == "this is the raw text"

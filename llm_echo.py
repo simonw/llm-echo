@@ -24,9 +24,11 @@ class _Shared:
 
     def shared(self, prompt, stream, response, conversation):
         prompt_text = prompt.prompt
+        raw = None
         if prompt_text.strip() and prompt_text.strip()[0] == "{":
             try:
                 prompt_dict = json.loads(prompt_text)
+                raw = prompt_dict.get("raw", None)
                 prompt_text = prompt_dict.get("prompt", "")
                 tool_calls = prompt_dict.get("tool_calls", [])
                 if tool_calls:
@@ -40,6 +42,9 @@ class _Shared:
 
             except json.JSONDecodeError:
                 pass
+
+        if raw is not None:
+            return raw
 
         info = {
             "prompt": prompt_text,
@@ -79,7 +84,10 @@ class _Shared:
 class Echo(_Shared, llm.Model):
     def execute(self, prompt, stream, response, conversation=None):
         data = self.shared(prompt, stream, response, conversation)
-        yield json.dumps(data, indent=2)
+        if isinstance(data, dict):
+            yield json.dumps(data, indent=2)
+        else:
+            yield data
 
 
 class EchoAsync(_Shared, llm.AsyncModel):
@@ -87,4 +95,7 @@ class EchoAsync(_Shared, llm.AsyncModel):
         self, prompt, stream, response, conversation=None
     ) -> AsyncGenerator[str, None]:
         data = self.shared(prompt, stream, response, conversation)
-        yield json.dumps(data, indent=2)
+        if isinstance(data, dict):
+            yield json.dumps(data, indent=2)
+        else:
+            yield data
