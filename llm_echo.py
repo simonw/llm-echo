@@ -36,7 +36,7 @@ class _Shared:
                         response.add_tool_call(
                             llm.ToolCall(
                                 name=tool_call["name"],
-                                arguments=tool_call["arguments"],
+                                arguments=tool_call.get("arguments") or {},
                             )
                         )
 

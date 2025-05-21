@@ -62,6 +62,9 @@ def test_prompt_with_tool_calls():
     def example(input: str) -> str:
         return f"Example output for {input}"
 
+    def hello() -> str:
+        return "Hello world"
+
     model = llm.get_model("echo")
     chain_response = model.chain(
         json.dumps(
@@ -70,23 +73,26 @@ def test_prompt_with_tool_calls():
                     {
                         "name": "example",
                         "arguments": {"input": "test"},
-                    }
+                    },
+                    {"name": "hello"},
                 ],
                 "prompt": "prompt",
             }
         ),
         system="system",
-        tools=[example],
+        tools=[example, hello],
     )
     responses = list(chain_response.responses())
     tool_calls = responses[0].tool_calls()
     assert tool_calls == [
-        llm.ToolCall(name="example", arguments={"input": "test"}, tool_call_id=None)
+        llm.ToolCall(name="example", arguments={"input": "test"}, tool_call_id=None),
+        llm.ToolCall(name="hello", arguments={}, tool_call_id=None),
     ]
     assert responses[1].prompt.tool_results == [
         llm.models.ToolResult(
             name="example", output="Example output for test", tool_call_id=None
-        )
+        ),
+        llm.models.ToolResult(name="hello", output="Hello world", tool_call_id=None),
     ]
     assert json.loads(responses[1].text()) == {
         "prompt": "",
@@ -95,7 +101,7 @@ def test_prompt_with_tool_calls():
         "stream": True,
         "previous": [
             {
-                "prompt": '{"tool_calls": [{"name": "example", "arguments": {"input": "test"}}], "prompt": "prompt"}'
+                "prompt": '{"tool_calls": [{"name": "example", "arguments": {"input": "test"}}, {"name": "hello"}], "prompt": "prompt"}'
             }
         ],
         "tool_results": [
@@ -103,7 +109,8 @@ def test_prompt_with_tool_calls():
                 "name": "example",
                 "output": "Example output for test",
                 "tool_call_id": None,
-            }
+            },
+            {"name": "hello", "output": "Hello world", "tool_call_id": None},
         ],
     }
 
