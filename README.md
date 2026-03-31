@@ -158,17 +158,8 @@ This is the raw response
 
 ## Development
 
-To set up this plugin locally, first checkout the code. Then create a new virtual environment:
+To set up this plugin locally, first checkout the code. Then run the tests:
 ```bash
 cd llm-echo
-python -m venv venv
-source venv/bin/activate
-```
-Now install the dependencies and test dependencies:
-```bash
-python -m pip install -e '.[test]'
-```
-To run the tests:
-```bash
-python -m pytest
+uv run pytest
 ```

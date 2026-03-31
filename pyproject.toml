@@ -6,9 +6,9 @@ readme = "README.md"
 authors = [{name = "Simon Willison"}]
 license = "Apache-2.0"
 classifiers = []
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "llm>=0.26a0"
+    "llm>=0.26"
 ]
 
 [build-system]
@@ -24,5 +24,5 @@ CI = "https://github.com/simonw/llm-echo/actions"
 [project.entry-points.llm]
 echo = "llm_echo"
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-asyncio"]
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio"]
