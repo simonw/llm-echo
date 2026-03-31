@@ -118,6 +118,29 @@ And run assertions against the `"tool_results"` key, which should look something
 ```
 Take a look at the [test suite for llm-tools-simpleeval](https://github.com/simonw/llm-tools-simpleeval/blob/main/tests/test_tools_simpleeval.py) for an example of how to write tests against tools.
 
+## echo-needs-key model
+
+The plugin also provides an `echo-needs-key` model which behaves identically to `echo` but requires an API key. This is useful for testing key resolution logic in plugins like [datasette-llm](https://github.com/datasette/datasette-llm).
+
+The resolved key is included in the JSON output:
+
+```bash
+LLM_ECHO_NEEDS_KEY_KEY=sk-test-123 llm -m echo-needs-key 'hello'
+```
+Output:
+```json
+{
+  "prompt": "hello",
+  "system": "",
+  "attachments": [],
+  "stream": true,
+  "previous": [],
+  "key": "sk-test-123"
+}
+```
+
+The model's `needs_key` is `"echo-needs-key"` and its `key_env_var` is `LLM_ECHO_NEEDS_KEY_KEY`.
+
 ## Raw responses
 
 Sometimes it can be useful to output an exact string, for example if you are testing the `--extract` option in LLM.

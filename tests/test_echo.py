@@ -128,3 +128,62 @@ def test_raw():
     )
     output = response.text()
     assert output == "this is the raw text"
+
+
+def test_echo_needs_key():
+    model = llm.get_model("echo-needs-key")
+    assert model.needs_key == "echo-needs-key"
+    assert model.key_env_var == "LLM_ECHO_NEEDS_KEY_KEY"
+    model.key = "sk-test-key-1234"
+    response = model.prompt("hello", system="system")
+    data = json.loads(response.text())
+    assert data == {
+        "prompt": "hello",
+        "system": "system",
+        "attachments": [],
+        "stream": True,
+        "previous": [],
+        "key": "sk-test-key-1234",
+    }
+
+
+def test_echo_needs_key_different_keys():
+    """Different calls can use different keys."""
+    model = llm.get_model("echo-needs-key")
+    model.key = "sk-key-alpha"
+    data1 = json.loads(model.prompt("first").text())
+    assert data1["key"] == "sk-key-alpha"
+
+    model.key = "sk-key-beta"
+    data2 = json.loads(model.prompt("second").text())
+    assert data2["key"] == "sk-key-beta"
+
+
+@pytest.mark.asyncio
+async def test_echo_needs_key_async():
+    model = llm.get_async_model("echo-needs-key")
+    assert model.needs_key == "echo-needs-key"
+    model.key = "sk-async-test-5678"
+    response = await model.prompt("async hello")
+    data = json.loads(await response.text())
+    assert data["key"] == "sk-async-test-5678"
+    assert data["prompt"] == "async hello"
+
+
+def test_echo_needs_key_with_raw():
+    """Raw mode should still work and not include the key."""
+    model = llm.get_model("echo-needs-key")
+    model.key = "sk-test-key"
+    response = model.prompt(json.dumps({"raw": "raw output"}))
+    assert response.text() == "raw output"
+
+
+def test_echo_needs_key_conversation():
+    model = llm.get_model("echo-needs-key")
+    model.key = "sk-conv-key"
+    conversation = model.conversation()
+    str(conversation.prompt("turn1"))
+    response = conversation.prompt("turn2")
+    data = json.loads(response.text())
+    assert data["key"] == "sk-conv-key"
+    assert data["previous"] == [{"prompt": "turn1"}]

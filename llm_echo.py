@@ -8,6 +8,7 @@ from pydantic import Field
 @llm.hookimpl
 def register_models(register):
     register(Echo(), EchoAsync())
+    register(EchoNeedsKey(), EchoNeedsKeyAsync())
 
 
 class _Shared:
@@ -96,6 +97,34 @@ class EchoAsync(_Shared, llm.AsyncModel):
     ) -> AsyncGenerator[str, None]:
         data = self.shared(prompt, stream, response, conversation)
         if isinstance(data, dict):
+            yield json.dumps(data, indent=2)
+        else:
+            yield data
+
+
+class _SharedNeedsKey(_Shared):
+    model_id = "echo-needs-key"
+    needs_key = "echo-needs-key"
+    key_env_var = "LLM_ECHO_NEEDS_KEY_KEY"
+
+
+class EchoNeedsKey(_SharedNeedsKey, llm.KeyModel):
+    def execute(self, prompt, stream, response, conversation=None, key=None):
+        data = self.shared(prompt, stream, response, conversation)
+        if isinstance(data, dict):
+            data["key"] = key
+            yield json.dumps(data, indent=2)
+        else:
+            yield data
+
+
+class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
+    async def execute(
+        self, prompt, stream, response, conversation=None, key=None
+    ) -> AsyncGenerator[str, None]:
+        data = self.shared(prompt, stream, response, conversation)
+        if isinstance(data, dict):
+            data["key"] = key
             yield json.dumps(data, indent=2)
         else:
             yield data
