@@ -86,9 +86,11 @@ class Echo(_Shared, llm.Model):
     def execute(self, prompt, stream, response, conversation=None):
         data = self.shared(prompt, stream, response, conversation)
         if isinstance(data, dict):
-            yield json.dumps(data, indent=2)
+            output = json.dumps(data, indent=2)
         else:
-            yield data
+            output = data
+        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        yield output
 
 
 class EchoAsync(_Shared, llm.AsyncModel):
@@ -97,9 +99,11 @@ class EchoAsync(_Shared, llm.AsyncModel):
     ) -> AsyncGenerator[str, None]:
         data = self.shared(prompt, stream, response, conversation)
         if isinstance(data, dict):
-            yield json.dumps(data, indent=2)
+            output = json.dumps(data, indent=2)
         else:
-            yield data
+            output = data
+        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        yield output
 
 
 class _SharedNeedsKey(_Shared):
@@ -113,9 +117,11 @@ class EchoNeedsKey(_SharedNeedsKey, llm.KeyModel):
         data = self.shared(prompt, stream, response, conversation)
         if isinstance(data, dict):
             data["key"] = key
-            yield json.dumps(data, indent=2)
+            output = json.dumps(data, indent=2)
         else:
-            yield data
+            output = data
+        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        yield output
 
 
 class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
@@ -125,6 +131,8 @@ class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
         data = self.shared(prompt, stream, response, conversation)
         if isinstance(data, dict):
             data["key"] = key
-            yield json.dumps(data, indent=2)
+            output = json.dumps(data, indent=2)
         else:
-            yield data
+            output = data
+        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        yield output

@@ -130,6 +130,23 @@ def test_raw():
     assert output == "this is the raw text"
 
 
+def test_usage():
+    model = llm.get_model("echo")
+    response = model.prompt("one two three")
+    response.text()
+    assert response.input_tokens == 3
+    assert response.output_tokens > 0
+
+
+@pytest.mark.asyncio
+async def test_usage_async():
+    model = llm.get_async_model("echo")
+    response = await model.prompt("one two three")
+    await response.text()
+    assert response.input_tokens == 3
+    assert response.output_tokens > 0
+
+
 def test_echo_needs_key():
     model = llm.get_model("echo-needs-key")
     assert model.needs_key == "echo-needs-key"
