@@ -1,8 +1,11 @@
 import llm
+from llm import parts
 import json
 from typing import Optional
 from typing import AsyncGenerator
 from pydantic import Field
+
+THINKING_CHUNKS = ("First I consider the prompt, ", "then I decide what to say.")
 
 
 @llm.hookimpl
@@ -20,6 +23,10 @@ class _Shared:
     class Options(llm.Options):
         example_bool: Optional[bool] = Field(
             description="Example boolean option",
+            default=None,
+        )
+        thinking: Optional[bool] = Field(
+            description="If set, emit canned reasoning chunks before the response",
             default=None,
         )
 
@@ -90,7 +97,12 @@ class Echo(_Shared, llm.Model):
         else:
             output = data
         response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
-        yield output
+        if prompt.options.thinking:
+            for chunk in THINKING_CHUNKS:
+                yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+        else:
+            yield output
 
 
 class EchoAsync(_Shared, llm.AsyncModel):
@@ -103,7 +115,12 @@ class EchoAsync(_Shared, llm.AsyncModel):
         else:
             output = data
         response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
-        yield output
+        if prompt.options.thinking:
+            for chunk in THINKING_CHUNKS:
+                yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+        else:
+            yield output
 
 
 class _SharedNeedsKey(_Shared):
@@ -121,7 +138,12 @@ class EchoNeedsKey(_SharedNeedsKey, llm.KeyModel):
         else:
             output = data
         response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
-        yield output
+        if prompt.options.thinking:
+            for chunk in THINKING_CHUNKS:
+                yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield llm.StreamEvent(type="text", chunk=output, part_index=1)
+        else:
+            yield output
 
 
 class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
@@ -135,4 +157,9 @@ class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
         else:
             output = data
         response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
-        yield output
+        if prompt.options.thinking:
+            for chunk in THINKING_CHUNKS:
+                yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield llm.StreamEvent(type="text", chunk=output, part_index=1)
+        else:
+            yield output

@@ -48,6 +48,16 @@ Output:
 }
 ```
 
+## Reasoning chunks
+
+Pass `-o thinking 1` to make the model emit two canned reasoning chunks before its normal JSON output. Useful for testing code that handles streaming reasoning tokens or persists `ReasoningPart`s.
+
+```bash
+llm -m echo 'hello' -o thinking 1
+```
+
+The two reasoning chunks are `"First I consider the prompt, "` and `"then I decide what to say."`, followed by the usual echo JSON as a text part.
+
 ## Tool calling
 
 You can use `llm-echo` to test tool calling without needing to run prompts through an actual LLM. In your prompt, send something like this:

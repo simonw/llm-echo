@@ -96,7 +96,7 @@ def test_prompt_with_tool_calls():
     ]
     assert json.loads(responses[1].text()) == {
         "prompt": "",
-        "system": "",
+        "system": "system",
         "attachments": [],
         "stream": True,
         "previous": [
@@ -204,3 +204,27 @@ def test_echo_needs_key_conversation():
     data = json.loads(response.text())
     assert data["key"] == "sk-conv-key"
     assert data["previous"] == [{"prompt": "turn1"}]
+
+
+def test_thinking_option():
+    model = llm.get_model("echo")
+    response = model.prompt("hi", thinking=True)
+    response.text()
+    parts = response.messages()[0].parts
+    assert [type(p).__name__ for p in parts] == ["ReasoningPart", "TextPart"]
+    assert parts[0].text == "First I consider the prompt, then I decide what to say."
+    assert json.loads(parts[1].text)["prompt"] == "hi"
+
+
+@pytest.mark.asyncio
+async def test_thinking_option_async():
+    model = llm.get_async_model("echo")
+    response = await model.prompt("hi", thinking=True)
+    events = []
+    async for event in response.astream_events():
+        events.append(event)
+    reasoning = [e for e in events if e.type == "reasoning"]
+    assert [e.chunk for e in reasoning] == [
+        "First I consider the prompt, ",
+        "then I decide what to say.",
+    ]
