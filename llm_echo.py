@@ -33,21 +33,44 @@ class _Shared:
     def shared(self, prompt, stream, response, conversation):
         prompt_text = prompt.prompt
         raw = None
+        # Pending tool_call StreamEvents the caller should yield before the
+        # text part. Emitting them as StreamEvents (rather than the legacy
+        # response.add_tool_call API) means they appear in
+        # response.to_dict()["messages"] as tool_call Parts, matching what
+        # real model adapters do.
+        self._pending_tool_call_events = []
         if prompt_text.strip() and prompt_text.strip()[0] == "{":
             try:
                 prompt_dict = json.loads(prompt_text)
                 raw = prompt_dict.get("raw", None)
                 prompt_text = prompt_dict.get("prompt", "")
                 tool_calls = prompt_dict.get("tool_calls", [])
-                if tool_calls:
-                    for tool_call in tool_calls:
-                        response.add_tool_call(
-                            llm.ToolCall(
-                                name=tool_call["name"],
-                                arguments=tool_call.get("arguments") or {},
-                            )
+                for idx, tool_call in enumerate(tool_calls):
+                    name = tool_call["name"]
+                    arguments = tool_call.get("arguments") or {}
+                    # llm 0.32 keeps two parallel stores: _stream_events
+                    # (read by to_dict / response.messages) and _tool_calls
+                    # (read by the chain framework's execute_tool_calls).
+                    # Populate BOTH — yielding StreamEvents alone makes
+                    # tool calls visible to persistence but invisible to
+                    # the chain loop, so the chain stops after one
+                    # response.
+                    response.add_tool_call(llm.ToolCall(name=name, arguments=arguments))
+                    self._pending_tool_call_events.append(
+                        parts.StreamEvent(
+                            type="tool_call_name",
+                            chunk=name,
+                            part_index=10 + idx,
+                            tool_name=name,
                         )
-
+                    )
+                    self._pending_tool_call_events.append(
+                        parts.StreamEvent(
+                            type="tool_call_args",
+                            chunk=json.dumps(arguments),
+                            part_index=10 + idx,
+                        )
+                    )
             except json.JSONDecodeError:
                 pass
 
@@ -101,8 +124,12 @@ class Echo(_Shared, llm.Model):
             for chunk in THINKING_CHUNKS:
                 yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
             yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
         else:
-            yield output
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
 
 
 class EchoAsync(_Shared, llm.AsyncModel):
@@ -119,8 +146,12 @@ class EchoAsync(_Shared, llm.AsyncModel):
             for chunk in THINKING_CHUNKS:
                 yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
             yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
         else:
-            yield output
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
 
 
 class _SharedNeedsKey(_Shared):
@@ -140,10 +171,14 @@ class EchoNeedsKey(_SharedNeedsKey, llm.KeyModel):
         response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
-                yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
-            yield llm.StreamEvent(type="text", chunk=output, part_index=1)
+                yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
         else:
-            yield output
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
 
 
 class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
@@ -159,7 +194,11 @@ class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
         response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
-                yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
-            yield llm.StreamEvent(type="text", chunk=output, part_index=1)
+                yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
         else:
-            yield output
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
+            for ev in self._pending_tool_call_events:
+                yield ev
