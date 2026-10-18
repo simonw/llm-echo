@@ -151,8 +151,8 @@ class EchoNeedsKey(_SharedNeedsKey, llm.KeyModel):
         self.set_usage(prompt, response, output)
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
-                yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
-            yield llm.StreamEvent(type="text", chunk=output, part_index=1)
+                yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
         else:
             yield output
 
@@ -170,7 +170,7 @@ class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
         self.set_usage(prompt, response, output)
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
-                yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
-            yield llm.StreamEvent(type="text", chunk=output, part_index=1)
+                yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
+            yield parts.StreamEvent(type="text", chunk=output, part_index=1)
         else:
             yield output
