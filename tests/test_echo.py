@@ -206,23 +206,37 @@ def test_echo_needs_key_conversation():
     assert data["previous"] == [{"prompt": "turn1"}]
 
 
-def test_thinking_option():
-    model = llm.get_model("echo")
+@pytest.mark.parametrize("model_id", ("echo", "echo-needs-key"))
+def test_thinking_option(model_id):
+    model = llm.get_model(model_id)
+    if model.needs_key:
+        model.key = "test-key"
     response = model.prompt("hi", thinking=True)
     response.text()
     parts = response.messages()[0].parts
     assert [type(p).__name__ for p in parts] == ["ReasoningPart", "TextPart"]
     assert parts[0].text == "First I consider the prompt, then I decide what to say."
-    assert json.loads(parts[1].text)["prompt"] == "hi"
+    data = json.loads(parts[1].text)
+    assert data["prompt"] == "hi"
+    if model.needs_key:
+        assert data["key"] == "test-key"
 
 
 @pytest.mark.asyncio
-async def test_thinking_option_async():
-    model = llm.get_async_model("echo")
+@pytest.mark.parametrize("model_id", ("echo", "echo-needs-key"))
+async def test_thinking_option_async(model_id):
+    model = llm.get_async_model(model_id)
+    if model.needs_key:
+        model.key = "test-key"
     response = await model.prompt("hi", thinking=True)
     events = []
     async for event in response.astream_events():
         events.append(event)
+    text = "".join(e.chunk for e in events if e.type == "text")
+    data = json.loads(text)
+    assert data["prompt"] == "hi"
+    if model.needs_key:
+        assert data["key"] == "test-key"
     reasoning = [e for e in events if e.type == "reasoning"]
     assert [e.chunk for e in reasoning] == [
         "First I consider the prompt, ",
