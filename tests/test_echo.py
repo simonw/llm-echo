@@ -84,15 +84,21 @@ def test_prompt_with_tool_calls():
     )
     responses = list(chain_response.responses())
     tool_calls = responses[0].tool_calls()
+    assert len(tool_calls) == 2
+    example_call_id, hello_call_id = (call.tool_call_id for call in tool_calls)
     assert tool_calls == [
-        llm.ToolCall(name="example", arguments={"input": "test"}, tool_call_id=None),
-        llm.ToolCall(name="hello", arguments={}, tool_call_id=None),
+        llm.ToolCall(
+            name="example", arguments={"input": "test"}, tool_call_id=example_call_id
+        ),
+        llm.ToolCall(name="hello", arguments={}, tool_call_id=hello_call_id),
     ]
     assert responses[1].prompt.tool_results == [
         llm.models.ToolResult(
-            name="example", output="Example output for test", tool_call_id=None
+            name="example", output="Example output for test", tool_call_id=example_call_id
         ),
-        llm.models.ToolResult(name="hello", output="Hello world", tool_call_id=None),
+        llm.models.ToolResult(
+            name="hello", output="Hello world", tool_call_id=hello_call_id
+        ),
     ]
     assert json.loads(responses[1].text()) == {
         "prompt": "",
@@ -108,9 +114,9 @@ def test_prompt_with_tool_calls():
             {
                 "name": "example",
                 "output": "Example output for test",
-                "tool_call_id": None,
+                "tool_call_id": example_call_id,
             },
-            {"name": "hello", "output": "Hello world", "tool_call_id": None},
+            {"name": "hello", "output": "Hello world", "tool_call_id": hello_call_id},
         ],
     }
 
@@ -243,23 +249,37 @@ def test_echo_needs_key_conversation():
     assert data["previous"] == [{"prompt": "turn1"}]
 
 
-def test_thinking_option():
-    model = llm.get_model("echo")
+@pytest.mark.parametrize("model_id", ("echo", "echo-needs-key"))
+def test_thinking_option(model_id):
+    model = llm.get_model(model_id)
+    if model.needs_key:
+        model.key = "test-key"
     response = model.prompt("hi", thinking=True)
     response.text()
     parts = response.messages()[0].parts
     assert [type(p).__name__ for p in parts] == ["ReasoningPart", "TextPart"]
     assert parts[0].text == "First I consider the prompt, then I decide what to say."
-    assert json.loads(parts[1].text)["prompt"] == "hi"
+    data = json.loads(parts[1].text)
+    assert data["prompt"] == "hi"
+    if model.needs_key:
+        assert data["key"] == "test-key"
 
 
 @pytest.mark.asyncio
-async def test_thinking_option_async():
-    model = llm.get_async_model("echo")
+@pytest.mark.parametrize("model_id", ("echo", "echo-needs-key"))
+async def test_thinking_option_async(model_id):
+    model = llm.get_async_model(model_id)
+    if model.needs_key:
+        model.key = "test-key"
     response = await model.prompt("hi", thinking=True)
     events = []
     async for event in response.astream_events():
         events.append(event)
+    text = "".join(e.chunk for e in events if e.type == "text")
+    data = json.loads(text)
+    assert data["prompt"] == "hi"
+    if model.needs_key:
+        assert data["key"] == "test-key"
     reasoning = [e for e in events if e.type == "reasoning"]
     assert [e.chunk for e in reasoning] == [
         "First I consider the prompt, ",
