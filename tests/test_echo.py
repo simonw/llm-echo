@@ -147,6 +147,43 @@ async def test_usage_async():
     assert response.output_tokens > 0
 
 
+def test_usage_includes_system():
+    model = llm.get_model("echo")
+    response = model.prompt("one two three", system="four five")
+    response.text()
+    assert response.input_tokens == 5
+
+
+def test_usage_includes_thinking():
+    model = llm.get_model("echo")
+    raw = json.dumps({"raw": "one two three"})
+    response = model.prompt(raw)
+    response.text()
+    assert response.output_tokens == 3
+    response = model.prompt(raw, thinking=True)
+    response.text()
+    # 3 words of output + 11 words of canned reasoning
+    assert response.output_tokens == 14
+
+
+def test_usage_includes_tool_results():
+    def example(input: str) -> str:
+        return f"Example output for {input}"
+
+    model = llm.get_model("echo")
+    chain_response = model.chain(
+        json.dumps(
+            {"tool_calls": [{"name": "example", "arguments": {"input": "test"}}]}
+        ),
+        system="system",
+        tools=[example],
+    )
+    responses = list(chain_response.responses())
+    responses[1].text()
+    # Empty prompt + "system" + "Example output for test"
+    assert responses[1].input_tokens == 5
+
+
 def test_echo_needs_key():
     model = llm.get_model("echo-needs-key")
     assert model.needs_key == "echo-needs-key"

@@ -88,6 +88,17 @@ class _Shared:
             ]
         return info
 
+    def set_usage(self, prompt, response, output):
+        input_texts = [prompt.prompt, prompt.system or ""]
+        input_texts.extend(str(r.output) for r in prompt.tool_results)
+        output_texts = [output]
+        if prompt.options.thinking:
+            output_texts.extend(THINKING_CHUNKS)
+        response.set_usage(
+            input=sum(len(s.split()) for s in input_texts),
+            output=sum(len(s.split()) for s in output_texts),
+        )
+
 
 class Echo(_Shared, llm.Model):
     def execute(self, prompt, stream, response, conversation=None):
@@ -96,7 +107,7 @@ class Echo(_Shared, llm.Model):
             output = json.dumps(data, indent=2)
         else:
             output = data
-        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        self.set_usage(prompt, response, output)
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
                 yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
@@ -114,7 +125,7 @@ class EchoAsync(_Shared, llm.AsyncModel):
             output = json.dumps(data, indent=2)
         else:
             output = data
-        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        self.set_usage(prompt, response, output)
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
                 yield parts.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
@@ -137,7 +148,7 @@ class EchoNeedsKey(_SharedNeedsKey, llm.KeyModel):
             output = json.dumps(data, indent=2)
         else:
             output = data
-        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        self.set_usage(prompt, response, output)
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
                 yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
@@ -156,7 +167,7 @@ class EchoNeedsKeyAsync(_SharedNeedsKey, llm.AsyncKeyModel):
             output = json.dumps(data, indent=2)
         else:
             output = data
-        response.set_usage(input=len(prompt.prompt.split()), output=len(output.split()))
+        self.set_usage(prompt, response, output)
         if prompt.options.thinking:
             for chunk in THINKING_CHUNKS:
                 yield llm.StreamEvent(type="reasoning", chunk=chunk, part_index=0)
