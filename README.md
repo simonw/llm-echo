@@ -109,8 +109,6 @@ assert responses[1].prompt.tool_results == [
     )
 ]
 ```
-Tool call IDs are supplied by LLM. Depending on the LLM version, an ID can be
-`None` or a generated string; results should retain the corresponding call's ID.
 
 Or you can read the JSON from the last response in the chain:
 ```python
