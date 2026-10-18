@@ -84,15 +84,21 @@ def test_prompt_with_tool_calls():
     )
     responses = list(chain_response.responses())
     tool_calls = responses[0].tool_calls()
+    assert len(tool_calls) == 2
+    example_call_id, hello_call_id = (call.tool_call_id for call in tool_calls)
     assert tool_calls == [
-        llm.ToolCall(name="example", arguments={"input": "test"}, tool_call_id=None),
-        llm.ToolCall(name="hello", arguments={}, tool_call_id=None),
+        llm.ToolCall(
+            name="example", arguments={"input": "test"}, tool_call_id=example_call_id
+        ),
+        llm.ToolCall(name="hello", arguments={}, tool_call_id=hello_call_id),
     ]
     assert responses[1].prompt.tool_results == [
         llm.models.ToolResult(
-            name="example", output="Example output for test", tool_call_id=None
+            name="example", output="Example output for test", tool_call_id=example_call_id
         ),
-        llm.models.ToolResult(name="hello", output="Hello world", tool_call_id=None),
+        llm.models.ToolResult(
+            name="hello", output="Hello world", tool_call_id=hello_call_id
+        ),
     ]
     assert json.loads(responses[1].text()) == {
         "prompt": "",
@@ -108,9 +114,9 @@ def test_prompt_with_tool_calls():
             {
                 "name": "example",
                 "output": "Example output for test",
-                "tool_call_id": None,
+                "tool_call_id": example_call_id,
             },
-            {"name": "hello", "output": "Hello world", "tool_call_id": None},
+            {"name": "hello", "output": "Hello world", "tool_call_id": hello_call_id},
         ],
     }
 
